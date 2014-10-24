@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<head>
+  <title>Activity Charting Sample</title>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=400">
+
+  <link href='http://fonts.googleapis.com/css?family=PT+Sans' rel='stylesheet' type='text/css'>
+  <link href='graph.css' rel='stylesheet' type='text/css'>
+
+  <script src="http://d3js.org/d3.v3.js"></script>
+  <script src="math.js"></script>
+  <script src="line_chart.js"></script>
+  <script src="pie_chart.js"></script>
+  <script src="activity_data.js"></script>
+
+</head>
+
+
+<body>
+<div class="content">
+  <div class="left"><h1>Activity</h1></div>
+  <div class="right">
+      <input id="time1" type="button" value="Today">
+      <input id="time3" type="button" value="3 Days">
+      <input id="time7" type="button" value="7 Days">
+      <input id="time14" type="button" value="14 Days">
+      <input id="time0" class="activeButton" type="button" value="All Time">
+  </div>
+
+  <div id="graph">
+    <svg id="graphSVG"></svg>
+  </div>
+
+  <div class="lineButtons">
+      <input id="averageLineButton" type="button" value="Mean Line">
+      <input id="trendLineButton" type="button" value="Trend Line">
+  </div>
+  
+  <div class="bottomCharts">
+    <span id="segments" class="boxContent">
+      <h1>Segments</h1>
+      <div class="segments activeButton" id="containerTotalSegments">Total<div style="float:right;" id="totalSegments"></div></div>
+      <div class="segments" id="containerMaleSegments">Male<div style="float:right;" id="maleSegments"></div></div>
+      <div class="segments" id="containerFemaleSegments">Female<div style="float:right;" id="femaleSegments"></div></div>
+    </span>
+    <span class="boxContent" style="text-align:center;">
+      <h1>Devices</h1>
+      <div id="pie">
+        <svg id="pieSVG"></svg>
+      </div>
+    </span>
+  </div>
+</div>
+
+
+
+
+<script>
+
+/* define the assets */
+var activityData = new ActivityData();
+var lineChart = new LineChart();
+var pieChart = new PieChart();
+
+/* setup the line chart */
+lineChart.init({"location": "graphSVG"});
+lineChart.addLine("activityLine");
+lineChart.addLine("averageLine");   lineChart.toggleLineVisibility("averageLine");
+lineChart.addLine("trendLine");     lineChart.toggleLineVisibility("trendLine");
+
+/* setup the pie chart */
+pieChart.data = [{'label':'Desktop', 'value':1},{'label':'Tablet', 'value':1},{'label':'Mobile', 'value':1}];
+pieChart.init({"location": "pieSVG"});
+
+/* creat a callback that updates the charts upon data change */
+activityData.setCallback(function(data){
+  lineChart.changeData(data);
+  lineChart.changeRange(activityData.range);
+  lineChart.updateView();
+  pieChart.updateView(activityData.getSummary("Device"));
+
+  document.getElementById("totalSegments").innerHTML= activityData.summaryPreFilter.Gender.male + activityData.summaryPreFilter.Gender.female;
+  document.getElementById("maleSegments").innerHTML=  activityData.summaryPreFilter.Gender.male;
+  document.getElementById("femaleSegments").innerHTML=activityData.summaryPreFilter.Gender.female;
+
+})
+
+/* import the data */
+activityData.importCSV("SampleData.csv", function(error){
+  if (error) console.log(error);
+  lineChart.resize();
+});
+
+/* setup the resize events */
+d3.select(window).on('resize', function () {
+    lineChart.resize.call(lineChart);
+    pieChart.resize.call(pieChart);
+}); 
+
+/* setup the buttons */
+function makeExclusiveActive(el){
+  var n = el.parentNode.firstChild;
+  for ( ; n; n = n.nextSibling ){
+    if (n===el) n.className += n.className ? " activeButton" : "activeButton";
+    else n.className = n.className ? n.className.replace("activeButton","") : "";
+  } 
+}
+
+document.getElementById('time0').onclick = function(){  makeExclusiveActive(this);  activityData.lastNDays(0); };
+document.getElementById('time1').onclick = function(){  makeExclusiveActive(this);  activityData.lastNDays(1); };
+document.getElementById('time3').onclick = function(){  makeExclusiveActive(this);  activityData.lastNDays(3); };
+document.getElementById('time7').onclick = function(){  makeExclusiveActive(this);  activityData.lastNDays(7); };
+document.getElementById('time14').onclick = function(){ makeExclusiveActive(this);  activityData.lastNDays(14); };
+
+document.getElementById('containerTotalSegments').onclick =  function(){  makeExclusiveActive(this);  activityData.filterData({'Gender':undefined}); };
+document.getElementById('containerMaleSegments').onclick =   function(){  makeExclusiveActive(this);  activityData.filterData({'Gender':"male"}); };
+document.getElementById('containerFemaleSegments').onclick = function(){  makeExclusiveActive(this);  activityData.filterData({'Gender':"female"}); };
+
+
+
+document.getElementById('averageLineButton').onclick = function(){ 
+  if (!lineChart.toggleLineVisibility("averageLine"))  this.className += this.className ? " activeButton" : "activeButton";
+  else                                                 this.className =  this.className ? this.className.replace("activeButton","") : ""; 
+};
+
+document.getElementById('trendLineButton').onclick = function(){ 
+  if (!lineChart.toggleLineVisibility("trendLine"))  this.className += this.className ? " activeButton" : "activeButton";
+  else                                               this.className =  this.className ? this.className.replace("activeButton","") : ""; 
+};
+
+
+
+</script>
