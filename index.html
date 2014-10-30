@@ -29,7 +29,6 @@
   </div>
 
   <div id="graph">
-    <svg id="graphSVG"></svg>
   </div>
 
   <div class="lineButtons">
@@ -47,7 +46,6 @@
     <span class="boxContent" style="text-align:center;">
       <h1>Devices</h1>
       <div id="pie">
-        <svg id="pieSVG"></svg>
       </div>
     </span>
   </div>
@@ -64,21 +62,23 @@ var lineChart = new LineChart();
 var pieChart = new PieChart();
 
 /* setup the line chart */
-lineChart.init({"location": "graphSVG"});
+lineChart.init({"location": "graph"});
 lineChart.addLine("activityLine");
-lineChart.addLine("averageLine");   lineChart.toggleLineVisibility("averageLine");
-lineChart.addLine("trendLine");     lineChart.toggleLineVisibility("trendLine");
+lineChart.addLine("averageLine");   lineChart.toggleVisibility("averageLine");
+lineChart.addLine("trendLine");     lineChart.toggleVisibility("trendLine");
 
 /* setup the pie chart */
 pieChart.data = [{'label':'Desktop', 'value':1},{'label':'Tablet', 'value':1},{'label':'Mobile', 'value':1}];
-pieChart.init({"location": "pieSVG"});
+pieChart.init({"location": "pie"});
 
 /* creat a callback that updates the charts upon data change */
 activityData.setCallback(function(data){
   lineChart.changeData(data);
   lineChart.changeRange(activityData.range);
   lineChart.updateView();
-  pieChart.updateView(activityData.getSummary("Device"));
+
+  pieChart.updateData(activityData.getSummary("Device"));
+  pieChart.updateView();
 
   document.getElementById("totalSegments").innerHTML= activityData.summaryPreFilter.Gender.male + activityData.summaryPreFilter.Gender.female;
   document.getElementById("maleSegments").innerHTML=  activityData.summaryPreFilter.Gender.male;
@@ -120,12 +120,12 @@ document.getElementById('containerFemaleSegments').onclick = function(){  makeEx
 
 
 document.getElementById('averageLineButton').onclick = function(){ 
-  if (!lineChart.toggleLineVisibility("averageLine"))  this.className += this.className ? " activeButton" : "activeButton";
-  else                                                 this.className =  this.className ? this.className.replace("activeButton","") : ""; 
+  if (!lineChart.toggleVisibility("averageLine"))    this.className += this.className ? " activeButton" : "activeButton";
+  else                                               this.className =  this.className ? this.className.replace("activeButton","") : ""; 
 };
 
 document.getElementById('trendLineButton').onclick = function(){ 
-  if (!lineChart.toggleLineVisibility("trendLine"))  this.className += this.className ? " activeButton" : "activeButton";
+  if (!lineChart.toggleVisibility("trendLine"))      this.className += this.className ? " activeButton" : "activeButton";
   else                                               this.className =  this.className ? this.className.replace("activeButton","") : ""; 
 };
 
