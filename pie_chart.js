@@ -5,11 +5,8 @@ var PieChart = function(){
   this.config = {
     "location": "pie",
     "margin": 1,
-    "duration": 500,
-    "minWidth": 300,
-    "maxWidth": 370,
-    "percentWidth": 0.4,
-
+    "transitionDuration": 500,
+    "resizing": {"minWidth": 300,  "maxWidth": 370, "percentWidth": 0.4 },
     "baseDimensions": {"width": 200, "height": 200, "pieRadius": 60, "labelRadius": 100},
     "labelDimensions": {"width": 36, "height": 12, "xOffset": 0, "yOffset": -3},
     "color": ["#C9DAF8", "#FCE5CD", "#EAD1DC"]
@@ -126,7 +123,7 @@ var PieChart = function(){
     /* redraw the chart */
     this.chart.objects
       .transition()
-      .duration(this.config.duration)
+      .duration(this.config.transitionDuration)
       .attrTween("d", function(a) {
           var i = d3.interpolate(this.current, a);
           this.current = i(0);
@@ -136,22 +133,21 @@ var PieChart = function(){
     /* redraw the labels */
     this.labels.objects
       .transition()
-      .duration(this.config.duration)
+      .duration(this.config.transitionDuration)
       .attr("transform", function(d) { return "translate(" + (elThis.labels.arc.centroid(d)) + ")"; });
 
     /* redraw the label background */
     this.labelBackground.objects
       .transition()
-      .duration(this.config.duration)
+      .duration(this.config.transitionDuration)
       .attr("transform", function(d) { return "translate(" + (elThis.labels.arc.centroid(d)) + ")"; });
   };
 
   this.resize = function(){
-    // ================== TODO fix later
-    el = document.getElementById(this.config.location+"SVG");
-    var width = Math.min(Math.max(parseInt(window.innerWidth) * this.config.percentWidth,this.config.minWidth),this.config.maxWidth) + "px";
-    el.style.width = width;
-    el.style.height = width;
+    var size = Math.min(Math.max(parseInt(window.innerWidth) * this.config.resizing.percentWidth,this.config.resizing.minWidth),this.config.resizing.maxWidth) + "px";
+    this.self
+      .style("width", size)
+      .style("height", size);
   };
 
 }

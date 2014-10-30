@@ -1,12 +1,13 @@
 var ActivityData = function(){
   this.data = [];
+
   this.summaryPreFilter = {};
   this.summaryPostFilter = {};
 
   this.interval = 3*60*60*1000;
   this.filter = {};
-  this.maxRange = {"x":[null, null], "y": [0,1]};
-  this.range = {"x":[null, null], "y": [0,1]};
+  this.maxRange = {"x":[null, null], "y": [null, null]};
+  this.range = {"x":[null, null], "y": [null, null]};
 
   /* function to call upon any change happening */
   this.callback = null;
@@ -16,13 +17,30 @@ var ActivityData = function(){
   }
 
   this.getSummary = function(item){
-      /* returns aggregate data for a pie chart from the post-filter data */
-      var ret = [], label;
-      for (var property in this.summaryPostFilter[item]) {
-        label = property.charAt(0).toUpperCase() + property.substring(1);
-        ret.push({'label':label, 'value':this.summaryPostFilter[item][property]});
-      } 
-      return ret;
+    /* returns aggregate data for a pie chart from the post-filter data */
+    var ret = [], label;
+    for (var property in this.summaryPostFilter[item]) {
+      label = property.charAt(0).toUpperCase() + property.substring(1);
+      ret.push({'label':label, 'value':this.summaryPostFilter[item][property]});
+    } 
+    return ret;
+  }
+
+  this.init = function(){
+    elThis = this;
+
+    /* get the extremeties of the data */
+    this.maxRange.x[0] = new Date(d3.min(elThis.data, function(d){return d.Date.getTime();}));        
+    this.maxRange.x[1] = new Date(d3.max(elThis.data, function(d){return d.Date.getTime();}));
+    this.maxRange.y[0] = 0;
+    this.maxRange.y[1] = 1;
+
+    /* set the current range to the max range */
+    this.range.x = this.maxRange.x;
+    this.range.y = this.maxRange.y;
+
+
+
   }
 
   this.processData = function(){
@@ -49,14 +67,15 @@ var ActivityData = function(){
     var filtersToMatch = Object.keys(this.filter).length;
     var matchedFilters = 0;
 
-    /* loop through the data and process the activity */
+    /* loop through the data  */
     for (i=0,ii=this.data.length;i<ii;i++){
 
       time = this.data[i].Date.getTime();
 
-      /* count the attributes within the range before the filter */
-      if (time >= minRange && time <= maxRange){
+      /* count the attributes: (1) within the range and (2) before the filter */
+      if (time >= minRange && time <= maxRange){  
         for (var attrname in this.data[i]) {
+          if (attrname == "Date" || attrname == "Activity") continue;
           if (!this.summaryPreFilter[attrname]) this.summaryPreFilter[attrname] = {};
           if (!this.summaryPreFilter[attrname][this.data[i][attrname]]) this.summaryPreFilter[attrname][this.data[i][attrname]] = 0;
           this.summaryPreFilter[attrname][this.data[i][attrname]] += 1;
@@ -68,21 +87,22 @@ var ActivityData = function(){
       for (var property in this.filter) { if (this.data[i][property] == this.filter[property]) matchedFilters++;  }
       if (matchedFilters != filtersToMatch) continue;
 
-
-      /* count the attributes within the range after the filter */
-      if (time >= minRange && time <= maxRange){
+      /* count the attributes: (1) within the range and (2) after the filter */
+      if (time >= minRange && time <= maxRange){  
         for (var attrname in this.data[i]) {
+          if (attrname == "Date" || attrname == "Activity") continue;
           if (!this.summaryPostFilter[attrname]) this.summaryPostFilter[attrname] = {};
           if (!this.summaryPostFilter[attrname][this.data[i][attrname]]) this.summaryPostFilter[attrname][this.data[i][attrname]] = 0;
           this.summaryPostFilter[attrname][this.data[i][attrname]] += 1;
         }
       }
-
+      
+      /* count the activity data: (1) across all data and (2) after the filter */
       tempActivity[Math.floor((time-minAbsolute)/this.interval)] += this.data[i].Activity;
       tempTotal[Math.floor((time-minAbsolute)/this.interval)] ++;
     }
 
-    /* convert to a percentage */
+    /* convert the activity data to a percentage */
     for (i=0,ii=tempActivity.length;i<ii;i++){
       tempActivity[i] = tempTotal[i]? tempActivity[i] / tempTotal[i] : 0;
     }
@@ -185,12 +205,8 @@ var ActivityData = function(){
         delete d.Time;
       });
 
-      elThis.maxRange.x[0] = new Date(d3.min(elThis.data, function(d){return d.Date.getTime();}));        
-      elThis.maxRange.x[1] = new Date(d3.max(elThis.data, function(d){return d.Date.getTime();}));
-
-      elThis.range.x = elThis.maxRange.x;
-
       callback(error);
+      elThis.init();
       elThis.filterData();
     });
   }
